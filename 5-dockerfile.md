@@ -53,17 +53,26 @@ docker build -t <nombre imagen>:<tag> .
 ### Ejecutar el archivo Dockerfile y construir una imagen en la versión 1.0
 No olvides verificar en qué directorio se encuentra el archivo Dockerfile
 ```
-
+docker build -t servidor-apache:1.0 .
 ```
+_Nota: se modificó la línea `RUN yum -y update` del Dockerfile para usar los repositorios de `vault.centos.org`, porque CentOS 7 ya no tiene soporte y el build fallaba (ver [mi aprendizaje](7-mi-aprendizaje.md))._
 
 **¿Cuántos pasos se han ejecutado?**
-# RESPONDER 
+
+Se ejecutaron 4 pasos (`[1/4]` a `[4/4]`): `FROM`, los dos `RUN` y el `COPY`. `EXPOSE` y `CMD` no aparecen como pasos porque solo agregan configuración (metadatos) a la imagen.
 
 ### Inspeccionar la imagen creada
-# COMPLETAR CON UNA CAPTURA
+```
+docker image inspect servidor-apache:1.0
+```
+![docker image inspect](img/5-inspect.png)
 
 **Modificar el archivo index.html para incluir su nombre y luego crear una nueva versión de la imagen anterior**
 **¿Cuántos pasos se han ejecutado? ¿Observa algo diferente en la creación de la imagen**
+```
+docker build -t servidor-apache:2.0 .
+```
+Se muestran los mismos 4 pasos, pero solo se volvió a ejecutar el `COPY`. Los pasos `RUN` aparecen como `CACHED` porque no cambiaron, así que Docker reutilizó esas capas. Por eso la imagen se creó en unos 3 segundos, mientras que la primera vez tardó más de un minuto y medio.
 
 ## Mecanismo de caché
 Docker usa un mecanismo de caché cuando crea imágenes para acelerar el proceso de construcción y evitar la repetición de pasos que no han cambiado. Cada instrucción en un Dockerfile crea una capa en la imagen final. Docker intenta reutilizar las capas de una construcción anterior si no han cambiado, lo que reduce significativamente el tiempo de construcción.
@@ -75,14 +84,15 @@ Docker usa un mecanismo de caché cuando crea imágenes para acelerar el proceso
 
 ### Crear un contenedor a partir de las imagen creada, mapear todos los puertos
 ```
-
+docker run -d --name server-apache -P servidor-apache:2.0
 ```
 
 ### ¿Con que puerto host se está realizando el mapeo?
-# COMPLETAR CON LA RESPUESTA
+Con el puerto **32771** del host (`0.0.0.0:32771->80/tcp`). Al usar `-P`, Docker asigna un puerto aleatorio del host a cada puerto declarado con `EXPOSE`.
 
 **¿Qué es una imagen huérfana?**
-# COMPLETAR CON LA RESPUESTA
+
+Es una imagen sin nombre ni etiqueta (aparece como `<none>:<none>`). Suele quedar cuando se construye una nueva imagen con el mismo nombre y tag: la etiqueta pasa a la nueva imagen y la anterior queda huérfana, ocupando espacio.
 
 ### Identificar imágenes huérfanas
 ```
